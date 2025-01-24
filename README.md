@@ -9,7 +9,7 @@ Features:
 
 Installation:
 - Clone the project:
-  - `git clone https://github.com/yourusername/RAGination.git`
+  - `git clone https://github.com/brncoguz/RAGination.git`
 - Install the requirements:
   - `cd RAGination`
   - `pip install -r requirements.txt`
