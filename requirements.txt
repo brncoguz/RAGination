@@ -1,0 +1,4 @@
+faiss-cpu
+numpy
+beautifulsoup4
+mistral-ai

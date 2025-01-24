@@ -4,26 +4,26 @@ import os
 import json
 import numpy as np
 
-from bs4 import BeautifulSoup
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
+from mistralai import Mistral, UserMessage
 
 # Initialize Mistral client
 def initialize_client():
     api_key = os.getenv("MISTRAL_API_KEY")
     if not api_key:
         raise ValueError("API key not found. Please set the MISTRAL_API_KEY environment variable.")
-    return MistralClient(api_key=api_key)
+    return Mistral(api_key=api_key)
 
 # Embedding functions
 def get_text_embedding(client, txt):
     embeddings_batch_response = client.embeddings(model="mistral-embed", input=txt)
     return embeddings_batch_response.data[0].embedding
 
+def split_into_chunks(text, chunk_size):
+    return [text[i : i + chunk_size] for i in range(0, len(text), chunk_size)]
+
 # QA function with context retrieval
 def qa_with_context(client, text, question, chunk_size=512):
-    def split_into_chunks(text, chunk_size):
-        return [text[i : i + chunk_size] for i in range(0, len(text), chunk_size)]
+
 
     chunks = split_into_chunks(text, chunk_size)
     text_embeddings = np.array([get_text_embedding(client, chunk) for chunk in chunks])
@@ -48,7 +48,10 @@ def qa_with_context(client, text, question, chunk_size=512):
     Query: {question}
     Answer:
     """
-    response = client.chat(model="mistral-small-latest", messages=[ChatMessage(role="user", content=prompt)])
+    response = client.chat.complete(
+        model="mistral-small-latest",
+        messages=[{"role": "user", "content": prompt}],
+    )
     return response.choices[0].message.content
 
 # Tools configuration
@@ -85,11 +88,11 @@ def chatbot_loop(client, tools, names_to_functions):
             break
 
         # Add user message to history
-        messages.append(ChatMessage(role="user", content=user_input))
+        messages.append({"role": "user", "content": user_input})
 
         try:
             # Get response from Mistral
-            response = client.chat(
+            response = client.chat.complete(
                 model="mistral-large-latest",
                 messages=messages,
                 tools=tools,
@@ -107,7 +110,7 @@ def chatbot_loop(client, tools, names_to_functions):
 
             # Print assistant's response and add to history
             print(f"Assistant: {asst_message}")
-            messages.append(ChatMessage(role="assistant", content=asst_message))
+            messages.append({"role": "assistant", "content": asst_message})
         except Exception as e:
             print(f"An error occurred: {e}")
 
